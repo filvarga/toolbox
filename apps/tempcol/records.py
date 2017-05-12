@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 # autor: Filip Varga
 
-# TODO: najist chybu nie je mozne updatovat !!
 DEBUG = False
 
 from sys import stderr
@@ -151,9 +150,8 @@ class Records(object):
                 stderr.write("[error] Chyba sieťovej komunikácie.\n")
                 break
 
-            # pozor logicka chyba on to yield-uje
-            # cize sa exception nezachyti v tomto bode ale
-            # az pri iteracii
+            # exception sa nezachyti v tomto bode ale
+            # az pri iteracii koli yield
             try:
                 for record in page.findRecords():
                     # debug
@@ -170,7 +168,7 @@ class Records(object):
                 stderr.write("[error] Chyba formátu stránky.\n")
                 break
                 
-            # commit after every procesed page
+            # commit po kazdej stranke
             self._conn.commit()
 
     def getAll(self, since):
