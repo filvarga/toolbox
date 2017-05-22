@@ -119,6 +119,7 @@ function Update-Windows() {
 }
 # $computer = "gkuba013"
 # Update-Windows -ComputerName $computer -MicrosoftUpdate -RestartComputer
+# Update-Windows -ComputerName (Get-ADComputer -Filter * -SearchBase "CN=Computers, DC=CONTOSO, DC=COM").Name -MicrosoftUpdate -RestartComputer
 # Invoke-Command -ComputerName $computer -ScriptBlock {Get-ScheduledJob}
 # Invoke-Command -ComputerName $computer -ScriptBlock {Get-Content -Path "C:\Windows-Update-Script.txt"}
 # Get-Content -Path "C:\Windows-Update-Script.txt" -Tail 1 –Wait
