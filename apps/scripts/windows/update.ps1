@@ -1,5 +1,7 @@
 # autor: Filip Varga
 
+# TODO: skontroluj ci moze scheduled job
+# vymazat sam seba pocas behu
 function Update-Windows() {
     [CmdletBinding()]
     param([Alias("ComputerName")] [string[]] $hostnames = "localhost",
@@ -13,8 +15,10 @@ function Update-Windows() {
         $service_name = "Windows Server Update Service"
     }
 
+    $jobs = New-Object System.Collections.ArrayList
+
     foreach ($hostname in $hostnames){
-        Invoke-Command -ComputerName $hostname -Credential $cred -ArgumentList $service_name, $reboot -ScriptBlock {
+        $job = Invoke-Command -AsJob -ComputerName $hostname -Credential $cred -ArgumentList $service_name, $reboot -ScriptBlock {
             Register-ScheduledJob -Name "Windows-Update-Script" -RunNow -ArgumentList $args[0], $args[1] -ScriptBlock {
                 $result = $null
                 $logfile = "C:\Windows-Update-Script.txt"
@@ -96,7 +100,7 @@ function Update-Windows() {
                         "$(Get-Date) Update Installer error '$($_.Exception.Message)'" | Out-File -Append $logfile
                         Unregister-ScheduledJob "Windows-Update-Script" -ErrorAction SilentlyContinue
                         continue
-                    } # error
+                        } # error
                     if ($result.ResultCode -eq 2) {
                         # Update installed !!!
                         # debug:
@@ -115,11 +119,28 @@ function Update-Windows() {
                 }
             }
         }
+        $jobs.Add($job) | Out-Null
+    }
+
+    # TODO: premysli logiku - najdi ine sposoby
+
+    while ($true) {
+        for ($i = 0; $i -lt $jobs.Count; $i++) {
+            $job = $jobs[$i]
+            if (($job.State -eq "Failed") -or ($job.State -eq "Completed")) {
+                Write-Host "$($job.Location): $($job.State)"
+                $jobs.RemoveAt($i--)
+                Remove-Job $job
+            }
+        }
+        if (-not $jobs) {break}
+        Start-Sleep -Seconds 5
     }
 }
 # $computer = "gkuba013"
 # Update-Windows -ComputerName $computer -MicrosoftUpdate -RestartComputer
 # Update-Windows -ComputerName (Get-ADComputer -Filter * -SearchBase "CN=Computers, DC=CONTOSO, DC=COM").Name -MicrosoftUpdate -RestartComputer
+# Update-Windows -ComputerName ((Get-ADComputer -Filter * -SearchBase "CN=Computers,DC=CONTOSO,DC=COM").DNSHostName | where { $_ -ne $null }) -MicrosoftUpdate -RestartComputer
 # Invoke-Command -ComputerName $computer -ScriptBlock {Get-ScheduledJob}
 # Invoke-Command -ComputerName $computer -ScriptBlock {Get-Content -Path "C:\Windows-Update-Script.txt"}
 # Get-Content -Path "C:\Windows-Update-Script.txt" -Tail 1 –Wait
