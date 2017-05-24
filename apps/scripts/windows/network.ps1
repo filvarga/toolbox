@@ -34,4 +34,25 @@ function Disable-DynamicDNSRegistraion(){
         Start-Sleep -Seconds 1
     }
 }
-# Disable-DynamicDNSRegistraion -ComputerName ((Get-ADComputer -Filter * -SearchBase "OU=Computers,OU=GKUBA,OU=GKU,DC=SKGEODESY,DC=LOCAL").DNSHostName | where { $_ -ne $null })
+
+function Test-PSRemoting(){
+    [CmdletBinding()]
+    param([Alias("ComputerName")] [string[]] $hostnames = "localhost",
+          [Alias("Credential")] [pscredential] [System.Management.Automation.Credential()] $cred = [pscredential]::empty)
+
+    foreach ($hostname in $hostnames){
+        if (Test-Connection -ComputerName $hostname -Count 1 -Quiet){
+            $session = New-PSSession -ComputerName $hostname -Credential $cred -ErrorAction SilentlyContinue
+            if ($session){
+                Remove-PSSession -Session $session
+                Write-Host "host: '$($hostname)' status: online, WinRM failed"
+            } else {
+                Write-Host "host: '$($hostname)' status: online, WinRM failed"
+            }
+        } else {
+            Write-Host "host: '$($hostname)' status: offline"
+        }
+    }
+}
+
+# Disable-DynamicDNSRegistraion -ComputerName ((Get-ADComputer -Filter * -SearchBase "CN=Computers,DC=CONTOSO,DC=COM").DNSHostName | where { $_ -ne $null })
