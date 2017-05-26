@@ -45,7 +45,7 @@ function Test-PSRemoting(){
             $session = New-PSSession -ComputerName $hostname -Credential $cred -ErrorAction SilentlyContinue
             if ($session){
                 Remove-PSSession -Session $session
-                Write-Host "host: '$($hostname)' status: online, WinRM failed"
+                Write-Host "host: '$($hostname)' status: online, WinRM online"
             } else {
                 Write-Host "host: '$($hostname)' status: online, WinRM failed"
             }
