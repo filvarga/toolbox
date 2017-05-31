@@ -1,5 +1,21 @@
 # autor: Filip Varga
 
+function Get-NetworkAddress() {
+    [CmdletBinding()]
+    param([Alias("IPAddress")] [IPAddress] $address,
+          [Alias("NetworkMask")] [IPAddress] $netmask)
+
+    $broadcast = New-Object System.Collections.ArrayList
+
+    $bAddress = $address.GetAddressBytes()
+    $bNetmask = $netmask.GetAddressBytes()
+
+    for ($i = 0; $i -le 3; $i++){
+        $broadcast.Add($bAddress[$i] -band $bNetmask[$i]) | Out-Null
+    }
+    return [IPAddress]($broadcast -Join ".")
+}
+
 function Disable-DynamicDNSRegistraion(){
     [CmdletBinding()]
     param([Alias("ComputerName")] [string[]] $hostnames = "localhost",
