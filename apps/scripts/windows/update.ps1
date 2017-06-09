@@ -17,7 +17,7 @@ function Update-Windows() {
 
     $jobs = New-Object System.Collections.ArrayList
 
-    foreach ($hostname in $hostnames){
+    foreach ($hostname in $hostnames) {
         $job = Invoke-Command -AsJob -ComputerName $hostname -Credential $cred -ArgumentList $service_name, $reboot -ScriptBlock {
             Register-ScheduledJob -Name "Windows-Update-Script" -RunNow -ArgumentList $args[0], $args[1] -ScriptBlock {
                 $result = $null

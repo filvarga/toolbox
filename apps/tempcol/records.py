@@ -164,13 +164,13 @@ class Records(object):
                     cur.execute("INSERT OR IGNORE INTO RECORDS VALUES (?,?);",
                     (record.datetime, record.measurement))
 
+                    # commit po kazdom zazname
+                    self._conn.commit()
+
             except PageException:
                 stderr.write("[error] Chyba formátu stránky.\n")
                 break
-                
-            # commit po kazdej stranke
-            self._conn.commit()
-
+                        
     def getAll(self, since):
         cur = self._conn.cursor()
 
