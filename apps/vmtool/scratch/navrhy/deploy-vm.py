@@ -18,7 +18,7 @@
 
 
 from pyVim.connect import SmartConnect, Disconnect
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Action
 from sys import exit, stderr, argv
 from pyVmomi import vim, vmodl
 from time import sleep, time
@@ -31,7 +31,7 @@ import ssl
 
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.addHandler(logging.StreamHandler())
 
 
 def get_content(username, password, host):
@@ -219,9 +219,10 @@ def info(content, name):
             logger.info(u'ip: %s' % ip.ipAddress)
 
 
+
 def setpass(conf, username, attrname):
     if (attrname not in conf) or \
-        (not conf.__getattribute__(attrname)):
+        (not conf.__getattr__(attrname)):
 
         password = getpass(u'login: %s\n password: ' %
         username)
@@ -235,15 +236,15 @@ def setpass(conf, username, attrname):
 
 def configure(content, conf):
     if conf.guest == 'linux':
-        setpass(conf.guest_username, 'guest_password')
+        setpass(conf, conf.guest_username, 'guest_password')
 
         if not config(content,
             conf.name,
             conf.users,
             conf.groups,
-            conf.domain,
-            conf.username,
-            conf.password,
+            conf.windows_domain,
+            conf.windows_username,
+            conf.windows_password,
             conf.guest_username,
             conf.guest_password):
 
@@ -277,24 +278,33 @@ def deploy(content, conf):
     
     logger.error(u'VirtualMachine not created')
     exit(1)
-    
+
 
 def add_arguments(subparsers, call):
     parser = subparsers.add_parser(
         call.func_name)
     parser.set_defaults(call=call)
 
-    parser.add_argument('-o', '--vcenter-host', dest='vcenter_host')
-    parser.add_argument('-d', '--windows-domain', dest='windows_domain')
-    parser.add_argument('-u', '--windows-username', dest='windows_username')
+    parser.add_argument('guest', choices=['linux', 'windows'])
+    parser.add_argument('name')
     
-    parser.add_argument('-n', '--name', required=True)
-    parser.add_argument('-g', '--guest', default='linux', choices=['linux', 'windows'])
+    parser.add_argument('--vcenter-host', dest='vcenter_host')
+    parser.add_argument('--vcenter-pool', dest='vcenter_pool')
+    parser.add_argument('--vcenter-folder', dest='vcenter_folder')
+    parser.add_argument('--vcenter-datastore', dest='vcenter_datastore')
 
+    parser.add_argument('--windows-domain', dest='windows_domain')
+    parser.add_argument('--windows-username', dest='windows_username')
+    
     parser.add_argument('--guest-username', dest='guest_username')
+
+    parser.add_argument('--template-linux', dest='template_linux')
+    parser.add_argument('--tempalte-windows', dest='template_windows')
 
     parser.add_argument('--domain-users', dest='users', action='append', default=list())
     parser.add_argument('--domain-groups', dest='groups', action='append', default=list())
+
+    parser.add_argument('-v', '--verbose', default='error', choices=['error', 'debug', 'info'])
 
 
 def main():
@@ -305,7 +315,11 @@ def main():
     add_arguments(subparsers, deploy)
     add_arguments(subparsers, configure)
 
-    conf = parser.parse_args(namespace=Config())
+    conf = Config()
+    conf.namespace = parser.parse_args()
+
+    logger.setLevel(getattr(logging,
+        conf.namespace.verbose.upper()))
 
     if not conf.read() or not \
         (('vcenter_host' in conf) and \
@@ -314,23 +328,24 @@ def main():
         ('vcenter_datastore' in conf) and \
         ('windows_domain' in conf) and \
         ('windows_username' in conf) and \
-        ('guest_username' in conf) and \
-        ('template_linux' in conf) and \
-        ('template_windows' in conf)):
+        ('guest_username' in conf)) and \
+        ((conf.guest == 'linux') and 
+           not ('template_linux' in conf)) or \
+        ('template_windows' in conf):
         logger.error("missing configuration parameter")
         exit(1)
 
-    setpass(conf.mail, 'windows_password')
+    setpass(conf, conf.mail, 'windows_password')
 
     content = get_content(conf.mail,
         conf.windows_password, conf.vcenter_host)
-
+    
+    exit(0)
     if content is None:
         logger.error("connecting to vCenter")
         exit(1)
 
     conf.call(content, conf)
-    exit(0)
 
 
 if __name__ == '__main__':
