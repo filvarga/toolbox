@@ -142,6 +142,7 @@ def clone(
     # TODO: remake to vm_mor.Clone !!!
     return vm_mor.CloneVM_Task(name=name, folder=folder_mor, spec=c_spec)
 
+
 def config(
             content,
             name,
@@ -283,16 +284,14 @@ def add_arguments(subparsers, call):
         call.func_name)
     parser.set_defaults(call=call)
 
-    parser.add_argument('-o', '--vcenter-host')
-    parser.add_argument('-d', '--windows-domain')
-    parser.add_argument('-u', '--windows-username')
-    parser.add_argument('-p', '--windows-password', default=None)
+    parser.add_argument('-o', '--vcenter-host', dest='vcenter_host')
+    parser.add_argument('-d', '--windows-domain', dest='windows_domain')
+    parser.add_argument('-u', '--windows-username', dest='windows_username')
     
     parser.add_argument('-n', '--name', required=True)
     parser.add_argument('-g', '--guest', default='linux', choices=['linux', 'windows'])
 
     parser.add_argument('--guest-username', dest='guest_username')
-    parser.add_argument('--guest-password', dest='guest_password')
 
     parser.add_argument('--domain-users', dest='users', action='append', default=list())
     parser.add_argument('--domain-groups', dest='groups', action='append', default=list())
@@ -309,15 +308,15 @@ def main():
     conf = parser.parse_args(namespace=Config())
 
     if not conf.read() or not \
-        (('vcenter_pool' in conf) and \
+        (('vcenter_host' in conf) and \
+        ('vcenter_pool' in conf) and \
         ('vcenter_folder' in conf) and \
         ('vcenter_datastore' in conf) and \
-        ('vcneter_host' in conf) and \
         ('windows_domain' in conf) and \
         ('windows_username' in conf) and \
+        ('guest_username' in conf) and \
         ('template_linux' in conf) and \
-        ('template_windows' in conf) and \
-        ('guest_username' in conf)):
+        ('template_windows' in conf)):
         logger.error("missing configuration parameter")
         exit(1)
 
