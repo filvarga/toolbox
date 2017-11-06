@@ -13,37 +13,40 @@ from os import environ
 
 class Config(object):
 
-    def __init__(self, filename='config.ini', section='global'):
+    def __init__(self, namespace, filename='config.ini', section='global'):
         self._filename = filename
         self._section = section
                 
         self._config = SafeConfigParser()
-        self.namespace = Namespace()
+        self.namespace = namespace
 
     def __getattr__(self, attrname):
+        attr = getattr(self.namespace,
+            attrname, None)
+        if attr:
+            return attr
 
-        if attrname in self.namespace:
-            attr = getattr(self.namespace, attrname)
-            if attr is not None:
-                return attr
-
-        if attrname in environ:
-            return environ.get(attrname)
+        attr = environ.get(attrname,
+            None)
+        if attr:
+            return attr
 
         try:
             attr = self._config.get(self._section,
                 attrname)
-
+        
         except NoOptionError:
             raise AttributeError(attrname)
 
         return attr
 
     def __contains__(self, attrname):
-        return (attrname in self.namespace) or \
-            (attrname in environ) or \
-            self._config.has_option(self._section,
-            attrname)
+
+        return ((getattr(self.namespace,
+                attrname, None) is not None) or
+                (attrname in environ) or
+                self._config.has_option(self._section,
+                attrname))
         
     def read(self):
 

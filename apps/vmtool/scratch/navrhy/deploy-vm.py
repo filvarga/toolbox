@@ -18,14 +18,14 @@
 
 
 from pyVim.connect import SmartConnect, Disconnect
-from argparse import ArgumentParser, Action
-from sys import exit, stderr, argv
+from argparse import ArgumentParser
 from pyVmomi import vim, vmodl
 from time import sleep, time
 from atexit import register
 from getpass import getpass
 from guest import SSHGuest
 from config import Config
+from sys import stdout
 import logging
 import ssl
 
@@ -75,8 +75,11 @@ def get_first_device(vm, type):
 def wait_for_task(task, seconds=1):
     state = task.info.state
     while (state == 'running') or (state == 'queued'):
+        stdout.write('\rProgress: %s %%' % task.info.progress)
+        stdout.flush()
         sleep(seconds); state = task.info.state
     if state == 'success':
+        print('\rProgress: 100 %')
         return True
     return False
 
@@ -200,29 +203,9 @@ def config(
     return True
 
 
-def info(content, name):
-    vm_mor = get_object(content, vim.VirtualMachine, name)
-    if vm_mor is None:
-        logger.error(u'VirtualMachine %s not found' % name)
-        return False 
-
-    #ethernet = get_first_device(vm_mor, vim.vm.device.VirtualEthernetCard)
-    #if ethernet is None:
-    #    logger.error(u'no VirtualEthernetCard found')
-    #    return False
-
-    #logger.info(u'mac:%s' % ethernet.macAddress)
-
-    for nic in vm_mor.guest.net:
-        logger.info(u'mac: %s' % nic.macAddress)
-        for ip in nic.ipConfig.ipAddress:
-            logger.info(u'ip: %s' % ip.ipAddress)
-
-
-
 def setpass(conf, username, attrname):
     if (attrname not in conf) or \
-        (not conf.__getattr__(attrname)):
+        not getattr(conf, attrname):
 
         password = getpass(u'login: %s\n password: ' %
         username)
@@ -231,7 +214,7 @@ def setpass(conf, username, attrname):
             logger.error(u'no password entered')
             exit(1)
         
-        conf.__setattr__(attrname, password)
+        setattr(con, attrname, password)
 
 
 def configure(content, conf):
@@ -267,13 +250,18 @@ def deploy(content, conf):
             conf.vcenter_pool,
             conf.vcenter_folder,
             conf.vcenter_datastore)
+
+        status = (task is not None) and \
+            wait_for_task(task)
     except KeyboardInterrupt:
-        if task and task.info.cancelable:
+        if (task is not None) and task.info.cancelable:
+            # CancelTask() returns None
             task.CancelTask()
+            loogger.error(u'Clone Task canceled')
     else:
-        if task and wait_for_task(task):
+        if status:
             # TODO: logika testovania uspesnosti
-            configure(content, conf)
+            #configure(content, conf)
             return
     
     logger.error(u'VirtualMachine not created')
@@ -299,52 +287,63 @@ def add_arguments(subparsers, call):
     parser.add_argument('--guest-username', dest='guest_username')
 
     parser.add_argument('--template-linux', dest='template_linux')
-    parser.add_argument('--tempalte-windows', dest='template_windows')
+    parser.add_argument('--template-windows', dest='template_windows')
 
     parser.add_argument('--domain-users', dest='users', action='append', default=list())
     parser.add_argument('--domain-groups', dest='groups', action='append', default=list())
 
-    parser.add_argument('-v', '--verbose', default='error', choices=['error', 'debug', 'info'])
+    parser.add_argument('-v', '--verbosity', default='error', choices=['error', 'debug', 'info'])
 
 
 def main():
     parser = ArgumentParser()
 
     subparsers = parser.add_subparsers()
-
+    
     add_arguments(subparsers, deploy)
     add_arguments(subparsers, configure)
 
-    conf = Config()
-    conf.namespace = parser.parse_args()
+    args = parser.parse_args()
 
-    logger.setLevel(getattr(logging,
-        conf.namespace.verbose.upper()))
+    conf = Config(namespace=args)
 
-    if not conf.read() or not \
-        (('vcenter_host' in conf) and \
-        ('vcenter_pool' in conf) and \
-        ('vcenter_folder' in conf) and \
-        ('vcenter_datastore' in conf) and \
-        ('windows_domain' in conf) and \
-        ('windows_username' in conf) and \
-        ('guest_username' in conf)) and \
-        ((conf.guest == 'linux') and 
-           not ('template_linux' in conf)) or \
-        ('template_windows' in conf):
-        logger.error("missing configuration parameter")
+    if not conf.read():
+        logger.error("missing config file")
         exit(1)
+
+    required = [
+        'vcenter_host',
+        'vcenter_pool',
+        'vcenter_folder',
+        'guest_username',
+        'windows_domain',
+        'windows_username',
+        'vcenter_datastore'
+        ]
+
+    if args.guest == 'linux':
+        required.append('template_linux')
+    else:
+        required.append('template_windows')
+
+    for attrname in required:
+        if ((not attrname in conf) or 
+            (not getattr(conf, attrname))):
+
+            logger.error("missing attribute {}".format(
+                attrname))
+            exit(1)
 
     setpass(conf, conf.mail, 'windows_password')
 
+def _():
     content = get_content(conf.mail,
         conf.windows_password, conf.vcenter_host)
-    
-    exit(0)
-    if content is None:
+
+    if not content:
         logger.error("connecting to vCenter")
         exit(1)
-
+    
     conf.call(content, conf)
 
 
