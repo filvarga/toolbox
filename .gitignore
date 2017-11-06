@@ -2,3 +2,6 @@
 *.db
 *.msi
 scratch.*
+.DS_Store
+*.out
+config.ini

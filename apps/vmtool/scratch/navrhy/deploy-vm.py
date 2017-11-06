@@ -289,10 +289,13 @@ def add_arguments(subparsers, call):
     parser.add_argument('--template-linux', dest='template_linux')
     parser.add_argument('--template-windows', dest='template_windows')
 
+    # TODO: tieto premenne nemozu ist z environ !!
     parser.add_argument('--domain-users', dest='users', action='append', default=list())
     parser.add_argument('--domain-groups', dest='groups', action='append', default=list())
 
     parser.add_argument('-v', '--verbosity', default='error', choices=['error', 'debug', 'info'])
+
+    parser.add_argument('--dry-run', dest='dry_run', action='store_true')
 
 
 def main():
@@ -336,7 +339,6 @@ def main():
 
     setpass(conf, conf.mail, 'windows_password')
 
-def _():
     content = get_content(conf.mail,
         conf.windows_password, conf.vcenter_host)
 
@@ -344,7 +346,8 @@ def _():
         logger.error("connecting to vCenter")
         exit(1)
     
-    conf.call(content, conf)
+    if not args.dry_run:
+        conf.call(content, conf)
 
 
 if __name__ == '__main__':

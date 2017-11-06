@@ -2,7 +2,6 @@
 
 from ConfigParser import SafeConfigParser, \
     NoOptionError, NoSectionError
-from argparse import Namespace
 from os import environ
 
 
