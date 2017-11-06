@@ -5,11 +5,6 @@ from ConfigParser import SafeConfigParser, \
 from os import environ
 
 
-# TODO: zvaz ci nevytvorit defaultny konfigurak
-# pri kazdom spusteni v adresari, kde je program
-# a ulozi parametre, ktore si vlozil ako vstupne
-# argumenty
-
 class Config(object):
 
     def __init__(self, namespace, filename='config.ini', section='global'):

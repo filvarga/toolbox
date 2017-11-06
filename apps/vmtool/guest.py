@@ -134,10 +134,8 @@ class SSHGuest(SSHConnector):
                 stdin=subprocess.PIPE)
             p.communicate(value2)
             exit(p.returncode)
-        #def callback2():
         def callback2(value):
             import os
-            #exit(os.system('(realm join)||(exit 1)'))
             # TODO: realm nevracia return code
             exit(os.system('(realm join {})||(exit 1)'.format(value)))
         return self.call(callback1, [username, password]) and \

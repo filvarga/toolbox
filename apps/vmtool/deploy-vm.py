@@ -14,8 +14,6 @@
 #       - jedine, ze chces supportovat prerusenie ulohy
 #       - stale to mozes cele uzavriet do deploy_vm funkcie
 
-# cucoriedka
-
 
 from pyVim.connect import SmartConnect, Disconnect
 from argparse import ArgumentParser
