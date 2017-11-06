@@ -5,3 +5,6 @@ scratch.*
 .DS_Store
 *.out
 config.ini
+scratch
+backup
+pyvix
