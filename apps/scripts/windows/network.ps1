@@ -16,20 +16,6 @@ function Get-NetworkAddress() {
     return [IPAddress]($broadcast -Join ".")
 }
 
-function Set-RouteLocal() {
-    [CmdletBinding()]
-    param([Alias("DefaultGateway")] [IPAddress] $gateway,
-          [Alias("DestinationPrefix")] [string] $prefix,
-          [Alias("RouteMetric")] [int] $metric)
-
-    $route = Get-NetRoute "0.0.0.0/0" -ErrorAction SilentlyContinue | Where-Object NextHop -eq $gateway
-
-    if ($route){
-        Remove-NetRoute -DestinationPrefix $prefix -ErrorAction SilentlyContinue -Confirm:$false
-        New-NetRoute -DestinationPrefix $prefix -InterfaceIndex $route.ifIndex -NextHop $gateway -RouteMetric $metric
-    }
-}
-
 function Disable-DynamicDNSRegistraion(){
     [CmdletBinding()]
     param([Alias("ComputerName")] [string[]] $hostnames = "localhost",
