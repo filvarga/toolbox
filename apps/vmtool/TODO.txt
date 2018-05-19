@@ -1,0 +1,6 @@
+a) uprava zobrazovania progressu
+    - vmware.py nema co obsahovat volania do stdout/stderr
+        - yield hodnot
+    - progress pri prvom volani moze vracat hodnotu None
+
+b) timeout na zaklade pribliznej dlzky spustenia vm toolov od startu OS

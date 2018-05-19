@@ -1,9 +1,0 @@
-# install modules behind proxy:
-Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Verbose -Force -Proxy "http://proxy.contoso.com:3128"
-# - restart powershell session
-[System.Net.WebRequest]::defaultwebproxy = New-Object System.Net.WebProxy("http://proxy.contoso.com:3128")
-Get-PSRepository
-# - should now list PSGallery
-Install-Module PSWindowsUpdate
-Add-WUServiceManager -ServiceID 7971f918-a847-4430-9279-4a52d1efe18d
-Get-WUInstall -MicrosoftUpdate -AcceptAll -AutoReboot

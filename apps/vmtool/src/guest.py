@@ -1,6 +1,5 @@
-#!/usr/bin/env python2.7
 # -*- encoding: utf-8 -*-
-# autor: Bc. Filip Varga
+# autor: Filip Varga
 
 from paramiko import SSHClient,\
     AutoAddPolicy
@@ -136,7 +135,7 @@ class SSHGuest(SSHConnector):
             exit(p.returncode)
         def callback2(value):
             import os
-            # TODO: realm nevracia return code
+            # TODO: pozor realm nevracia return code !!!
             exit(os.system('(realm join {})||(exit 1)'.format(value)))
         return self.call(callback1, [username, password]) and \
             self.call(callback2, [domain], elevate=True)

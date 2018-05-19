@@ -1,0 +1,2 @@
+pyvmomi==6.7.0
+paramiko==2.4.1

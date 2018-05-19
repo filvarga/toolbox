@@ -1,9 +1,10 @@
 # -*- encoding: utf-8 -*-
-# autor: Bc. Filip Varga
+# autor: Filip Varga
 
 from pyVim.connect import SmartConnect, Disconnect
 from pyVmomi import vim, vmodl
 from time import sleep, time
+from atexit import register
 import ssl
 
 
@@ -48,8 +49,8 @@ def get_first_device(vm, type):
 def wait_for_task(task, seconds=1):
     state = task.info.state
     while (state == 'running') or (state == 'queued'):
-        # TODO: opravit moze byt None !!
-        # TODO: opravit lepsie bude yieldovat !!
+        # TODO: pri prvom volani moze nastat situacia s vratenim None
+        # TODO: zvazit alternativne riesenie yieldovanim progressu
         stdout.write('\rProgress: %s %%' % task.info.progress)
         stdout.flush()
         sleep(seconds); state = task.info.state
@@ -117,5 +118,5 @@ def clone(
     c_spec.location = r_spec
     c_spec.powerOn = True
 
-    # TODO: remake to vm_mor.Clone !!!
+    # TODO: zvazit alternativne riesenie cez metodu vm_mor.Clone
     return vm_mor.CloneVM_Task(name=name, folder=folder_mor, spec=c_spec)
