@@ -1,18 +1,13 @@
 #!/usr/bin/env python2.7
 # -*- encoding: utf-8 -*-
-# autor: Bc. Filip Varga
+# author: Bc. Filip Varga
 
 from argparse import ArgumentParser
 from os import system, remove, path
 from sys import platform
-import sys
 
 
-DEFAULT_C = 'SK'
-DEFAULT_L = 'Bratislava'
-DEFAULT_O = 'Urad geodezie kartografie a katastra Slovenskej republiky'
-DEFAULT_OU = 'IT'
-DEFAULT_CONFIG = '''
+OPENSSL_CFG = '''
 [ req ]
 prompt = no
 req_extensions = ext
@@ -29,18 +24,20 @@ keyUsage = nonRepudiation, digitalSignature, keyEncipherment
 extendedKeyUsage = serverAuth, clientAuth
 {1}
 '''
+OPENSSL_CMD = 'openssl req -nodes -newkey rsa:2048 -out '\
+              '"{0}.csr" -keyout "{0}.key" -config {1} {2}'
 
 
 def openssl(args, config='.tmp.conf'):
 
     if args.subjectAltName:
-        subjectAltName = 'subjectAltName={}'.format(
+        san = 'subjectAltName={}'.format(
             ','.join(['DNS:{}'.format(dns) for dns in args.subjectAltName]))
     else:
-        subjectAltName = ''
+        san = ''
 
     with open(config, 'w') as fo:
-        fo.write(DEFAULT_CONFIG.format(args, subjectAltName))
+        fo.write(OPENSSL_CFG.format(args, san))
 
     if args.debug:
         pipe = '2>&1'
@@ -49,22 +46,17 @@ def openssl(args, config='.tmp.conf'):
     else:
         pipe = '&> /dev/null'
 
-    rcode = system('openssl req -nodes -newkey rsa:2048'\
-        ' -out "{0}.csr"'\
-        ' -keyout "{0}.key"'\
-        ' -config {1} {2}'.format(
-        args.commonName, config, pipe))
-
+    rc = system(OPENSSL_CMD.format(args.commonName, config, pipe))
     remove(config)
+    return rc
 
-    if rcode == 0:
-        print('{0}.csr\n{0}.key'.format(
-            path.join(path.abspath(path.curdir),
-            args.commonName)))
-
-    return rcode
 
 if __name__ == '__main__':
+
+    DEFAULT_C = 'SK'
+    DEFAULT_L = 'Bratislava'
+    DEFAULT_O = 'Urad geodezie kartografie a katastra Slovenskej republiky'
+    DEFAULT_OU = 'IT'
 
     def parse_args():
         parser = ArgumentParser()
@@ -81,20 +73,18 @@ if __name__ == '__main__':
 
         return parser.parse_args()
 
+    def print_status(rc, cn):
+        print('[{0}] {1}\n\t{2}.csr, {2}.key'.format(
+              "error" if rc else "success", path.abspath(path.curdir), cn))
+
     def main():
         args = parse_args()
         if args.inputFile:
             with open(args.inputFile) as fo:
                 for line in fo.readlines():
-                    line = line.rstrip()
-                    args.commonName = line
-                    rcode = openssl(args)
-                    print("{1}\t{0}".format("error" if rcode else "success",
-                        line))
-
+                    args.commonName = line.rstrip()
+                    print_status(openssl(args), args.commonName)
         else:
-            rcode = openssl(args)
-            print("{1}\t{0}".format("error" if rcode else "success",
-                args.commonName))
+            print_status(openssl(args), args.commonName)
 
     main()
