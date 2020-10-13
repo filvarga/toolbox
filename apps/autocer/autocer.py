@@ -2,9 +2,9 @@
 # -*- encoding: utf-8 -*-
 # author: Bc. Filip Varga
 
+from os import system, remove, path, environ
 from argparse import ArgumentParser
-from os import system, remove, path
-from sys import platform
+from sys import platform, argv
 
 
 OPENSSL_CFG = '''
@@ -53,18 +53,23 @@ def openssl(args, config='.tmp.conf'):
 
 if __name__ == '__main__':
 
-    DEFAULT_C = 'SK'
-    DEFAULT_L = 'Bratislava'
-    DEFAULT_O = 'Urad geodezie kartografie a katastra Slovenskej republiky'
-    DEFAULT_OU = 'IT'
+    DEFAULTS = {
+        'C':  'SK',
+        'L':  'Bratislava',
+        'O':  'Urad geodezie kartografie a katastra Slovenskej republiky',
+        'OU': 'IT'
+    }
+
+    def get_default(k):
+        return environ.get('{}{}'.format(argv[0].upper(), k), DEFAULTS[k])
 
     def parse_args():
         parser = ArgumentParser()
         parser.add_argument('--debug', action='store_true')
-        parser.add_argument('--countryName', default=DEFAULT_C)
-        parser.add_argument('--localityName', default=DEFAULT_L)
-        parser.add_argument('--organizationName', default=DEFAULT_O)
-        parser.add_argument('--organizationUnitName', default=DEFAULT_OU)
+        parser.add_argument('--countryName', default=get_default('C'))
+        parser.add_argument('--localityName', default=get_default('L'))
+        parser.add_argument('--organizationName', default=get_default('O'))
+        parser.add_argument('--organizationUnitName', default=get_default('OU'))
         parser.add_argument('--subjectAltName', default=list(), action='append')
 
         group = parser.add_mutually_exclusive_group(required=True)
