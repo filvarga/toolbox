@@ -2,9 +2,9 @@
 # -*- encoding: utf-8 -*-
 # autor: Bc. Filip Varga
 
-from sys import platform, stdout, stderr
 from argparse import ArgumentParser
 from os import system, remove, path
+from sys import platform
 import sys
 
 
@@ -89,14 +89,12 @@ if __name__ == '__main__':
                     line = line.rstrip()
                     args.commonName = line
                     rcode = openssl(args)
-                    if rcode:
-                        sys.stdout.write("success {}".format(line))
-                    else:
-                        sys.stderr.write("error {}".format(line))
+                    print("{1}\t{0}".format("error" if rcode else "success",
+                        line))
+
         else:
             rcode = openssl(args)
-            if rcode:
-                sys.stdout.write("success {}".format(line))
-            else:
-                sys.stderr.write("error {}".format(line))
+            print("{1}\t{0}".format("error" if rcode else "success",
+                args.commonName))
+
     main()
